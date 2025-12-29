@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: go-task-processing-engine
+    env: go
+    plan: free
+    buildCommand: |
+      if [ ! -f go.mod ]; then
+        go mod init app
+      fi
+      go mod tidy
+      go build -o app .
+    startCommand: ./app

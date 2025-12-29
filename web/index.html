@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TaskForge - Task Processing Engine</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Custom Tailwind Config -->
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                50: "#f0f9ff",
+                100: "#e0f2fe",
+                200: "#bae6fd",
+                300: "#7dd3fc",
+                400: "#38bdf8",
+                500: "#0ea5e9",
+                600: "#0284c7",
+                700: "#0369a1",
+                800: "#075985",
+                900: "#0c4a6e",
+              },
+            },
+            animation: {
+              "pulse-slow": "pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+              "spin-slow": "spin 2s linear infinite",
+            },
+          },
+        },
+      };
+    </script>
+
+    <!-- Custom Styles -->
+    <style>
+      /* Custom scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #1e293b;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #475569;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #64748b;
+      }
+
+      /* Gradient text */
+      .gradient-text {
+        background: linear-gradient(135deg, #0ea5e9 0%, #8b5cf6 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      /* Card hover effect */
+      .card-hover {
+        transition: all 0.3s ease;
+      }
+      .card-hover:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.3);
+      }
+
+      /* Status badges animation */
+      @keyframes status-pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+      .status-running {
+        animation: status-pulse 1.5s ease-in-out infinite;
+      }
+
+      /* Toast animation */
+      @keyframes slide-in {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+      .toast-enter {
+        animation: slide-in 0.3s ease-out;
+      }
+    </style>
+  </head>
+
+  <body class="h-full bg-slate-900 text-slate-100">
+    <div id="app" class="min-h-full">
+      <!-- Navigation -->
+      <nav
+        class="bg-slate-800/50 backdrop-blur-xl border-b border-slate-700/50 sticky top-0 z-50"
+      >
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="flex items-center justify-between h-16">
+            <!-- Logo -->
+            <div class="flex items-center space-x-3">
+              <div
+                class="w-10 h-10 bg-gradient-to-br from-primary-500 to-purple-600 rounded-xl flex items-center justify-center"
+              >
+                <svg
+                  class="w-6 h-6 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h1 class="text-xl font-bold gradient-text">TaskForge</h1>
+                <p class="text-xs text-slate-400">Task Processing Engine</p>
+              </div>
+            </div>
+
+            <!-- Health Status -->
+            <div id="health-status" class="flex items-center space-x-2">
+              <span class="relative flex h-3 w-3">
+                <span
+                  class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"
+                ></span>
+                <span
+                  class="relative inline-flex rounded-full h-3 w-3 bg-green-500"
+                ></span>
+              </span>
+              <span class="text-sm text-slate-300">System Healthy</span>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Main Content -->
+      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Stats Cards -->
+        <section
+          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+        >
+          <!-- Queue Size -->
+          <div
+            class="bg-slate-800/50 backdrop-blur rounded-2xl p-6 border border-slate-700/50 card-hover"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-slate-400 text-sm font-medium">Queue Size</p>
+                <p id="stat-queue" class="text-3xl font-bold text-white mt-1">
+                  0
+                </p>
+              </div>
+              <div
+                class="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center"
+              >
+                <svg
+                  class="w-6 h-6 text-blue-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                  />
+                </svg>
+              </div>
+            </div>
+            <div class="mt-4 flex items-center text-sm">
+              <span class="text-slate-400">Pending tasks in queue</span>
+            </div>
+          </div>
+
+          <!-- Tasks Created -->
+          <div
+            class="bg-slate-800/50 backdrop-blur rounded-2xl p-6 border border-slate-700/50 card-hover"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-slate-400 text-sm font-medium">Tasks Created</p>
+                <p id="stat-created" class="text-3xl font-bold text-white mt-1">
+                  0
+                </p>
+              </div>
+              <div
+                class="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center"
+              >
+                <svg
+                  class="w-6 h-6 text-purple-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                  />
+                </svg>
+              </div>
+            </div>
+            <div class="mt-4 flex items-center text-sm">
+              <span class="text-slate-400">Total tasks submitted</span>
+            </div>
+          </div>
+
+          <!-- Tasks Completed -->
+          <div
+            class="bg-slate-800/50 backdrop-blur rounded-2xl p-6 border border-slate-700/50 card-hover"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-slate-400 text-sm font-medium">Completed</p>
+                <p
+                  id="stat-completed"
+                  class="text-3xl font-bold text-green-400 mt-1"
+                >
+                  0
+                </p>
+              </div>
+              <div
+                class="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center"
+              >
+                <svg
+                  class="w-6 h-6 text-green-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
+            </div>
+            <div class="mt-4 flex items-center text-sm">
+              <span class="text-green-400" id="stat-success-rate">100%</span>
+              <span class="text-slate-400 ml-1">success rate</span>
+            </div>
+          </div>
+
+          <!-- Tasks Failed -->
+          <div
+            class="bg-slate-800/50 backdrop-blur rounded-2xl p-6 border border-slate-700/50 card-hover"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-slate-400 text-sm font-medium">Failed</p>
+                <p
+                  id="stat-failed"
+                  class="text-3xl font-bold text-red-400 mt-1"
+                >
+                  0
+                </p>
+              </div>
+              <div
+                class="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center"
+              >
+                <svg
+                  class="w-6 h-6 text-red-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </div>
+            </div>
+            <div class="mt-4 flex items-center text-sm">
+              <span class="text-slate-400">Avg latency: </span>
+              <span class="text-yellow-400 ml-1" id="stat-latency">0ms</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <!-- Create Task Form -->
+          <div class="lg:col-span-1">
+            <div
+              class="bg-slate-800/50 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden"
+            >
+              <div class="px-6 py-4 border-b border-slate-700/50">
+                <h2 class="text-lg font-semibold flex items-center">
+                  <svg
+                    class="w-5 h-5 mr-2 text-primary-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                    />
+                  </svg>
+                  Create Task
+                </h2>
+              </div>
+
+              <form id="create-task-form" class="p-6 space-y-5">
+                <!-- Task Type -->
+                <div>
+                  <label class="block text-sm font-medium text-slate-300 mb-2"
+                    >Task Type</label
+                  >
+                  <select
+                    id="task-type"
+                    class="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
+                  >
+                    <option value="echo">🔊 Echo - Return payload</option>
+                    <option value="sleep">💤 Sleep - Wait for duration</option>
+                    <option value="compute">🔢 Compute - CPU intensive</option>
+                    <option value="fail">💥 Fail - Always fails</option>
+                  </select>
+                </div>
+
+                <!-- Priority -->
+                <div>
+                  <label class="block text-sm font-medium text-slate-300 mb-2"
+                    >Priority</label
+                  >
+                  <div class="grid grid-cols-4 gap-2">
+                    <button
+                      type="button"
+                      data-priority="0"
+                      class="priority-btn px-3 py-2 rounded-lg text-sm font-medium border border-slate-600 bg-slate-700/50 hover:bg-slate-600 transition"
+                    >
+                      Low
+                    </button>
+                    <button
+                      type="button"
+                      data-priority="1"
+                      class="priority-btn px-3 py-2 rounded-lg text-sm font-medium border border-primary-500 bg-primary-500/20 text-primary-400 transition"
+                    >
+                      Normal
+                    </button>
+                    <button
+                      type="button"
+                      data-priority="2"
+                      class="priority-btn px-3 py-2 rounded-lg text-sm font-medium border border-slate-600 bg-slate-700/50 hover:bg-slate-600 transition"
+                    >
+                      High
+                    </button>
+                    <button
+                      type="button"
+                      data-priority="3"
+                      class="priority-btn px-3 py-2 rounded-lg text-sm font-medium border border-slate-600 bg-slate-700/50 hover:bg-slate-600 transition"
+                    >
+                      Critical
+                    </button>
+                  </div>
+                  <input type="hidden" id="task-priority" value="1" />
+                </div>
+
+                <!-- Payload -->
+                <div id="payload-section">
+                  <label class="block text-sm font-medium text-slate-300 mb-2"
+                    >Payload (JSON)</label
+                  >
+                  <textarea
+                    id="task-payload"
+                    rows="4"
+                    class="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-3 text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition resize-none"
+                    placeholder='{"message": "Hello, World!"}'
+                  ></textarea>
+                </div>
+
+                <!-- Max Retries -->
+                <div>
+                  <label class="block text-sm font-medium text-slate-300 mb-2"
+                    >Max Retries</label
+                  >
+                  <input
+                    type="number"
+                    id="task-retries"
+                    value="3"
+                    min="0"
+                    max="10"
+                    class="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
+                  />
+                </div>
+
+                <!-- Submit Button -->
+                <button
+                  type="submit"
+                  id="submit-btn"
+                  class="w-full bg-gradient-to-r from-primary-500 to-purple-600 hover:from-primary-600 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg shadow-primary-500/25"
+                >
+                  <svg
+                    class="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M13 10V3L4 14h7v7l9-11h-7z"
+                    />
+                  </svg>
+                  <span>Create Task</span>
+                </button>
+              </form>
+
+              <!-- Quick Actions -->
+              <div class="px-6 pb-6">
+                <p class="text-xs text-slate-500 mb-3">Quick Actions</p>
+                <div class="grid grid-cols-2 gap-2">
+                  <button
+                    onclick="createBatchTasks(5)"
+                    class="px-3 py-2 bg-slate-700/50 hover:bg-slate-600 rounded-lg text-sm text-slate-300 transition flex items-center justify-center space-x-1"
+                  >
+                    <span>⚡</span>
+                    <span>Create 5</span>
+                  </button>
+                  <button
+                    onclick="createBatchTasks(10)"
+                    class="px-3 py-2 bg-slate-700/50 hover:bg-slate-600 rounded-lg text-sm text-slate-300 transition flex items-center justify-center space-x-1"
+                  >
+                    <span>🚀</span>
+                    <span>Create 10</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tasks List -->
+          <div class="lg:col-span-2">
+            <div
+              class="bg-slate-800/50 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden"
+            >
+              <div
+                class="px-6 py-4 border-b border-slate-700/50 flex items-center justify-between"
+              >
+                <h2 class="text-lg font-semibold flex items-center">
+                  <svg
+                    class="w-5 h-5 mr-2 text-primary-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                    />
+                  </svg>
+                  Tasks
+                  <span
+                    id="tasks-count"
+                    class="ml-2 px-2 py-0.5 bg-slate-700 rounded-full text-xs text-slate-400"
+                    >0</span
+                  >
+                </h2>
+
+                <!-- Filters -->
+                <div class="flex items-center space-x-2">
+                  <select
+                    id="filter-status"
+                    class="bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  >
+                    <option value="">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="running">Running</option>
+                    <option value="completed">Completed</option>
+                    <option value="failed">Failed</option>
+                  </select>
+                  <button
+                    onclick="refreshTasks()"
+                    class="p-2 bg-slate-700/50 hover:bg-slate-600 rounded-lg transition"
+                    title="Refresh"
+                  >
+                    <svg
+                      id="refresh-icon"
+                      class="w-4 h-4 text-slate-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Tasks Table -->
+              <div class="overflow-x-auto">
+                <table class="w-full">
+                  <thead class="bg-slate-700/30">
+                    <tr>
+                      <th
+                        class="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider"
+                      >
+                        Task
+                      </th>
+                      <th
+                        class="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider"
+                      >
+                        Type
+                      </th>
+                      <th
+                        class="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider"
+                      >
+                        Priority
+                      </th>
+                      <th
+                        class="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider"
+                      >
+                        Status
+                      </th>
+                      <th
+                        class="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider"
+                      >
+                        Created
+                      </th>
+                      <th
+                        class="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider"
+                      >
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody id="tasks-table" class="divide-y divide-slate-700/50">
+                    <!-- Tasks will be inserted here -->
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Empty State -->
+              <div id="empty-state" class="hidden p-12 text-center">
+                <div
+                  class="w-16 h-16 bg-slate-700/50 rounded-full flex items-center justify-center mx-auto mb-4"
+                >
+                  <svg
+                    class="w-8 h-8 text-slate-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                    />
+                  </svg>
+                </div>
+                <h3 class="text-lg font-medium text-slate-300 mb-1">
+                  No tasks yet
+                </h3>
+                <p class="text-slate-500">
+                  Create your first task using the form
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- HTTP Requests Section -->
+        <section class="mt-8">
+          <div
+            class="bg-slate-800/50 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden"
+          >
+            <div class="px-6 py-4 border-b border-slate-700/50">
+              <h2 class="text-lg font-semibold flex items-center">
+                <svg
+                  class="w-5 h-5 mr-2 text-primary-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                  />
+                </svg>
+                HTTP Requests
+              </h2>
+            </div>
+            <div class="p-6">
+              <div
+                id="http-requests"
+                class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+              >
+                <!-- HTTP request stats will be inserted here -->
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- Footer -->
+      <footer class="border-t border-slate-700/50 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div class="flex items-center justify-between text-sm text-slate-500">
+            <p>TaskForge - Concurrent Task Processing Engine</p>
+            <p>Built with 💙 in Go</p>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-20 right-4 z-50 space-y-2"></div>
+
+    <!-- Task Detail Modal -->
+    <div id="task-modal" class="fixed inset-0 z-50 hidden">
+      <div
+        class="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onclick="closeModal()"
+      ></div>
+      <div
+        class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl"
+      >
+        <div
+          class="bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl m-4"
+        >
+          <div
+            class="px-6 py-4 border-b border-slate-700 flex items-center justify-between"
+          >
+            <h3 class="text-lg font-semibold">Task Details</h3>
+            <button
+              onclick="closeModal()"
+              class="p-1 hover:bg-slate-700 rounded-lg transition"
+            >
+              <svg
+                class="w-5 h-5 text-slate-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+          <div id="modal-content" class="p-6">
+            <!-- Task details will be inserted here -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+      // ==========================================
+      // Configuration
+      // ==========================================
+      const API_BASE = "/api/v1";
+      const REFRESH_INTERVAL = 2000; // 2 seconds
+
+      let selectedPriority = 1;
+      let autoRefresh = true;
+      let refreshTimer = null;
+
+      // ==========================================
+      // Toast Notifications
+      // ==========================================
+      function showToast(message, type = "info") {
+        const container = document.getElementById("toast-container");
+        const toast = document.createElement("div");
+
+        const colors = {
+          success: "bg-green-500",
+          error: "bg-red-500",
+          info: "bg-primary-500",
+          warning: "bg-yellow-500",
+        };
+
+        toast.className = `toast-enter ${colors[type]} text-white px-4 py-3 rounded-xl shadow-lg flex items-center space-x-2 min-w-[300px]`;
+        toast.innerHTML = `
+                <span class="flex-1">${message}</span>
+                <button onclick="this.parentElement.remove()" class="hover:bg-white/20 rounded p-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            `;
+
+        container.appendChild(toast);
+
+        setTimeout(() => {
+          toast.style.opacity = "0";
+          toast.style.transform = "translateX(100%)";
+          toast.style.transition = "all 0.3s ease-out";
+          setTimeout(() => toast.remove(), 300);
+        }, 3000);
+      }
+
+      // ==========================================
+      // API Functions
+      // ==========================================
+      async function fetchStats() {
+        try {
+          const response = await fetch(`${API_BASE}/stats`);
+          const data = await response.json();
+          updateStats(data);
+        } catch (error) {
+          console.error("Failed to fetch stats:", error);
+        }
+      }
+
+      async function fetchTasks() {
+        try {
+          const filter = document.getElementById("filter-status").value;
+          const url = filter
+            ? `${API_BASE}/tasks?status=${filter}`
+            : `${API_BASE}/tasks`;
+
+          const response = await fetch(url);
+          const tasks = await response.json();
+          updateTasksTable(tasks);
+        } catch (error) {
+          console.error("Failed to fetch tasks:", error);
+        }
+      }
+
+      async function createTask(taskData) {
+        try {
+          const response = await fetch(`${API_BASE}/tasks`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(taskData),
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || "Failed to create task");
+          }
+
+          const task = await response.json();
+          showToast(`Task created: ${task.id.substring(0, 8)}...`, "success");
+          refreshAll();
+          return task;
+        } catch (error) {
+          showToast(error.message, "error");
+          throw error;
+        }
+      }
+
+      async function deleteTask(id) {
+        try {
+          const response = await fetch(`${API_BASE}/tasks/${id}`, {
+            method: "DELETE",
+          });
+
+          if (!response.ok && response.status !== 204) {
+            throw new Error("Failed to delete task");
+          }
+
+          showToast("Task deleted", "success");
+          refreshAll();
+        } catch (error) {
+          showToast(error.message, "error");
+        }
+      }
+
+      async function getTask(id) {
+        try {
+          const response = await fetch(`${API_BASE}/tasks/${id}`);
+          if (!response.ok) {
+            throw new Error("Task not found");
+          }
+          return await response.json();
+        } catch (error) {
+          showToast(error.message, "error");
+          return null;
+        }
+      }
+
+      // ==========================================
+      // UI Update Functions
+      // ==========================================
+      function updateStats(data) {
+        document.getElementById("stat-queue").textContent = data.queue_size;
+        document.getElementById("stat-created").textContent =
+          data.metrics.tasks_created;
+        document.getElementById("stat-completed").textContent =
+          data.tasks.completed;
+        document.getElementById("stat-failed").textContent = data.tasks.failed;
+        document.getElementById(
+          "stat-latency"
+        ).textContent = `${data.metrics.avg_latency_ms}ms`;
+
+        // Calculate success rate
+        const total = data.metrics.tasks_processed + data.tasks.failed;
+        const rate =
+          total > 0
+            ? Math.round((data.metrics.tasks_processed / total) * 100)
+            : 100;
+        document.getElementById("stat-success-rate").textContent = `${rate}%`;
+
+        // Update HTTP requests
+        updateHttpRequests(data.http_requests);
+      }
+
+      function updateHttpRequests(requests) {
+        const container = document.getElementById("http-requests");
+
+        if (!requests || Object.keys(requests).length === 0) {
+          container.innerHTML =
+            '<p class="text-slate-500 col-span-full text-center">No requests yet</p>';
+          return;
+        }
+
+        container.innerHTML = Object.entries(requests)
+          .sort((a, b) => b[1] - a[1])
+          .map(([key, count]) => {
+            const [method, path, status] = key.split(":");
+            const methodColors = {
+              GET: "bg-green-500/20 text-green-400",
+              POST: "bg-blue-500/20 text-blue-400",
+              PUT: "bg-yellow-500/20 text-yellow-400",
+              DELETE: "bg-red-500/20 text-red-400",
+            };
+            const statusColor = status.startsWith("2")
+              ? "text-green-400"
+              : status.startsWith("4")
+              ? "text-yellow-400"
+              : "text-red-400";
+
+            return `
+                        <div class="bg-slate-700/30 rounded-xl p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="px-2 py-0.5 rounded text-xs font-medium ${
+                                  methodColors[method] ||
+                                  "bg-slate-600 text-slate-300"
+                                }">${method}</span>
+                                <span class="text-lg font-bold text-white">${count}</span>
+                            </div>
+                            <p class="text-xs text-slate-400 truncate" title="${path}">${path}</p>
+                            <p class="text-xs ${statusColor}">${status}</p>
+                        </div>
+                    `;
+          })
+          .join("");
+      }
+
+      function updateTasksTable(tasks) {
+        const table = document.getElementById("tasks-table");
+        const emptyState = document.getElementById("empty-state");
+        const countBadge = document.getElementById("tasks-count");
+
+        countBadge.textContent = tasks.length;
+
+        if (tasks.length === 0) {
+          table.innerHTML = "";
+          emptyState.classList.remove("hidden");
+          return;
+        }
+
+        emptyState.classList.add("hidden");
+
+        // Sort by created_at descending
+        tasks.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        table.innerHTML = tasks
+          .map((task) => {
+            const statusConfig = {
+              pending: {
+                bg: "bg-yellow-500/20",
+                text: "text-yellow-400",
+                icon: "⏳",
+              },
+              running: {
+                bg: "bg-blue-500/20",
+                text: "text-blue-400",
+                icon: "⚡",
+                class: "status-running",
+              },
+              completed: {
+                bg: "bg-green-500/20",
+                text: "text-green-400",
+                icon: "✅",
+              },
+              failed: { bg: "bg-red-500/20", text: "text-red-400", icon: "❌" },
+              cancelled: {
+                bg: "bg-slate-500/20",
+                text: "text-slate-400",
+                icon: "🚫",
+              },
+            };
+
+            const priorityLabels = ["Low", "Normal", "High", "Critical"];
+            const priorityColors = [
+              "text-slate-400",
+              "text-primary-400",
+              "text-orange-400",
+              "text-red-400",
+            ];
+
+            const status = statusConfig[task.status] || statusConfig.pending;
+            const createdAt = new Date(task.created_at).toLocaleTimeString();
+
+            return `
+                    <tr class="hover:bg-slate-700/30 transition">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center">
+                                <div class="font-mono text-sm text-slate-300">${task.id.substring(
+                                  0,
+                                  8
+                                )}...</div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 bg-slate-700 rounded text-sm">${
+                              task.type
+                            }</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="${
+                              priorityColors[task.priority]
+                            } font-medium text-sm">
+                                ${priorityLabels[task.priority]}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 rounded-full text-xs font-medium ${
+                              status.bg
+                            } ${status.text} ${status.class || ""}">
+                                ${status.icon} ${task.status}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-slate-400">${createdAt}</td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center space-x-2">
+                                <button onclick="viewTask('${
+                                  task.id
+                                }')" class="p-1.5 hover:bg-slate-600 rounded-lg transition" title="View">
+                                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                    </svg>
+                                </button>
+                                <button onclick="deleteTask('${
+                                  task.id
+                                }')" class="p-1.5 hover:bg-red-500/20 rounded-lg transition" title="Delete">
+                                    <svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+          })
+          .join("");
+      }
+
+      // ==========================================
+      // Modal Functions
+      // ==========================================
+      async function viewTask(id) {
+        const task = await getTask(id);
+        if (!task) return;
+
+        const modal = document.getElementById("task-modal");
+        const content = document.getElementById("modal-content");
+
+        content.innerHTML = `
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-xs text-slate-500 mb-1">Task ID</p>
+                            <p class="font-mono text-sm text-white bg-slate-700/50 px-3 py-2 rounded-lg">${
+                              task.id
+                            }</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500 mb-1">Type</p>
+                            <p class="text-white">${task.type}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500 mb-1">Status</p>
+                            <p class="text-white">${task.status}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500 mb-1">Priority</p>
+                            <p class="text-white">${
+                              ["Low", "Normal", "High", "Critical"][
+                                task.priority
+                              ]
+                            }</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500 mb-1">Created At</p>
+                            <p class="text-white">${new Date(
+                              task.created_at
+                            ).toLocaleString()}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500 mb-1">Retries</p>
+                            <p class="text-white">${task.retry_count} / ${
+          task.max_retries
+        }</p>
+                        </div>
+                    </div>
+                    
+                    ${
+                      task.started_at
+                        ? `
+                        <div>
+                            <p class="text-xs text-slate-500 mb-1">Started At</p>
+                            <p class="text-white">${new Date(
+                              task.started_at
+                            ).toLocaleString()}</p>
+                        </div>
+                    `
+                        : ""
+                    }
+                    
+                    ${
+                      task.completed_at
+                        ? `
+                        <div>
+                            <p class="text-xs text-slate-500 mb-1">Completed At</p>
+                            <p class="text-white">${new Date(
+                              task.completed_at
+                            ).toLocaleString()}</p>
+                        </div>
+                    `
+                        : ""
+                    }
+                    
+                    <div>
+                        <p class="text-xs text-slate-500 mb-1">Payload</p>
+                        <pre class="bg-slate-700/50 p-3 rounded-lg text-sm text-green-400 overflow-x-auto">${JSON.stringify(
+                          task.payload,
+                          null,
+                          2
+                        )}</pre>
+                    </div>
+                    
+                    ${
+                      task.result
+                        ? `
+                        <div>
+                            <p class="text-xs text-slate-500 mb-1">Result</p>
+                            <pre class="bg-slate-700/50 p-3 rounded-lg text-sm text-primary-400 overflow-x-auto">${JSON.stringify(
+                              task.result,
+                              null,
+                              2
+                            )}</pre>
+                        </div>
+                    `
+                        : ""
+                    }
+                    
+                    ${
+                      task.error
+                        ? `
+                        <div>
+                            <p class="text-xs text-slate-500 mb-1">Error</p>
+                            <p class="text-red-400 bg-red-500/10 p-3 rounded-lg">${task.error}</p>
+                        </div>
+                    `
+                        : ""
+                    }
+                </div>
+            `;
+
+        modal.classList.remove("hidden");
+      }
+
+      function closeModal() {
+        document.getElementById("task-modal").classList.add("hidden");
+      }
+
+      // ==========================================
+      // Form Handling
+      // ==========================================
+      function initForm() {
+        const form = document.getElementById("create-task-form");
+        const typeSelect = document.getElementById("task-type");
+        const payloadSection = document.getElementById("payload-section");
+        const payloadTextarea = document.getElementById("task-payload");
+
+        // Priority buttons
+        document.querySelectorAll(".priority-btn").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            document.querySelectorAll(".priority-btn").forEach((b) => {
+              b.classList.remove(
+                "border-primary-500",
+                "bg-primary-500/20",
+                "text-primary-400"
+              );
+              b.classList.add("border-slate-600", "bg-slate-700/50");
+            });
+            btn.classList.remove("border-slate-600", "bg-slate-700/50");
+            btn.classList.add(
+              "border-primary-500",
+              "bg-primary-500/20",
+              "text-primary-400"
+            );
+            selectedPriority = parseInt(btn.dataset.priority);
+            document.getElementById("task-priority").value = selectedPriority;
+          });
+        });
+
+        // Task type change - update placeholder
+        typeSelect.addEventListener("change", () => {
+          const placeholders = {
+            echo: '{"message": "Hello, World!"}',
+            sleep: '{"duration": "2s"}',
+            compute: '{"iterations": 1000000}',
+            fail: "{}",
+          };
+          payloadTextarea.placeholder = placeholders[typeSelect.value] || "{}";
+        });
+
+        // Form submit
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const submitBtn = document.getElementById("submit-btn");
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = `
+                    <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Creating...</span>
+                `;
+
+          try {
+            let payload;
+            try {
+              payload = JSON.parse(payloadTextarea.value || "{}");
+            } catch {
+              throw new Error("Invalid JSON in payload");
+            }
+
+            await createTask({
+              type: typeSelect.value,
+              payload: payload,
+              priority: selectedPriority,
+              max_retries: parseInt(
+                document.getElementById("task-retries").value
+              ),
+            });
+
+            // Reset form
+            payloadTextarea.value = "";
+          } catch (error) {
+            // Error already shown via toast
+          } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = `
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                        <span>Create Task</span>
+                    `;
+          }
+        });
+
+        // Filter change
+        document
+          .getElementById("filter-status")
+          .addEventListener("change", () => {
+            fetchTasks();
+          });
+      }
+
+      // ==========================================
+      // Batch Create
+      // ==========================================
+      async function createBatchTasks(count) {
+        showToast(`Creating ${count} tasks...`, "info");
+
+        const types = ["echo", "sleep", "compute"];
+        const payloads = {
+          echo: { message: "Batch task" },
+          sleep: { duration: "1s" },
+          compute: { iterations: 100000 },
+        };
+
+        for (let i = 0; i < count; i++) {
+          const type = types[Math.floor(Math.random() * types.length)];
+          try {
+            await createTask({
+              type: type,
+              payload: { ...payloads[type], batch_index: i },
+              priority: Math.floor(Math.random() * 4),
+              max_retries: 3,
+            });
+          } catch (error) {
+            // Continue with next task
+          }
+        }
+
+        showToast(`Created ${count} tasks`, "success");
+      }
+
+      // ==========================================
+      // Refresh Functions
+      // ==========================================
+      function refreshTasks() {
+        const icon = document.getElementById("refresh-icon");
+        icon.classList.add("animate-spin");
+
+        Promise.all([fetchStats(), fetchTasks()]).finally(() => {
+          setTimeout(() => icon.classList.remove("animate-spin"), 500);
+        });
+      }
+
+      function refreshAll() {
+        fetchStats();
+        fetchTasks();
+      }
+
+      function startAutoRefresh() {
+        if (refreshTimer) clearInterval(refreshTimer);
+        refreshTimer = setInterval(refreshAll, REFRESH_INTERVAL);
+      }
+
+      // ==========================================
+      // Keyboard Shortcuts
+      // ==========================================
+      document.addEventListener("keydown", (e) => {
+        // Escape to close modal
+        if (e.key === "Escape") {
+          closeModal();
+        }
+        // R to refresh
+        if (
+          e.key === "r" &&
+          !e.ctrlKey &&
+          !e.metaKey &&
+          document.activeElement.tagName !== "INPUT" &&
+          document.activeElement.tagName !== "TEXTAREA"
+        ) {
+          e.preventDefault();
+          refreshTasks();
+        }
+      });
+
+      // ==========================================
+      // Initialize
+      // ==========================================
+      document.addEventListener("DOMContentLoaded", () => {
+        initForm();
+        refreshAll();
+        startAutoRefresh();
+
+        // Show welcome toast
+        setTimeout(() => {
+          showToast("Welcome to TaskForge! 🚀", "info");
+        }, 500);
+      });
+    </script>
+  </body>
+</html>
